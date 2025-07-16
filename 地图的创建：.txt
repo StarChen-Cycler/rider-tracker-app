@@ -1,0 +1,1099 @@
+地图的创建：
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <title>地图显示</title>
+    <style>
+        html,
+        body,
+        #container {
+          width: 100%;
+          height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<!-- 加载地图JSAPI脚本 -->
+<script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+<script>
+    var map = new AMap.Map('container', {
+        viewMode: '2D', // 默认使用 2D 模式，如果希望使用带有俯仰角的 3D 模式，请设置 viewMode: '3D'
+        zoom:11, // 初始化地图层级
+        center: [116.397428, 39.90923] // 初始化地图中心点
+    });
+</script>
+</body>
+</html>
+
+地图的加载完成：
+
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <title>地图加载完成</title>
+</head>
+
+<body>
+  <div id="container"></div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    var map = map = new AMap.Map('container', {
+        zoom: 11,
+    });
+    
+    map.on("complete", function(){
+       log.success("地图加载完成！");  
+    });
+  </script>
+</body>
+
+</html>
+
+
+地图的销毁：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <title>地图创建与销毁</title>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="input-card" style="width:16rem">
+    <h4>创建、销毁地图</h4>
+    <div id="btns">
+      <div class="input-item">
+        <button id="create-btn" class="btn" style="margin-right:1rem;">创建地图</button>
+        <button id="destroy-btn" class="btn">销毁地图</button>
+      </div>
+    </div>
+  </div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    // ⚠️：请尽量不要进行地图的重新创建和销毁，如果有图层的隐藏和显示需求，请使用图层的 show/hide 方法。
+    var map = null;
+
+    function createMap() {
+      map = new AMap.Map('container', {
+        zoom: 11
+      });
+      log.success("创建地图成功");
+    }
+
+    function destroyMap() {
+      map && map.destroy();
+      log.info("地图已销毁");
+    }
+
+    //初始化地图
+    createMap();
+
+    //绑定创建、销毁事件
+    document.querySelector("#create-btn").onclick = createMap;
+    document.querySelector("#destroy-btn").onclick = destroyMap;
+  </script>
+</body>
+
+</html>
+
+异步加载地图：
+
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>异步加载地图</title>
+    <link rel="stylesheet" href="https://cache.amap.com/lbs/static/main1119.css"/>
+</head>
+<body>
+<div id="container"></div>
+<script>
+   window.onApiLoaded = function (){
+        var map = new AMap.Map('container', {
+            center: [117.000923, 36.675807],
+            zoom: 6
+        });
+        map.plugin(["AMap.ToolBar"], function() {
+            map.addControl(new AMap.ToolBar());
+        });
+    }
+    var url = 'https://webapi.amap.com/maps?v=2.0&key=您申请的key值&callback=onApiLoaded';
+    var jsapi = document.createElement('script');
+    jsapi.charset = 'utf-8';
+    jsapi.src = url;
+    document.head.appendChild(jsapi);
+</script>
+</body>
+</html>
+
+
+JSAPI加载器：
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>AMap JSAPI Loader</title>
+    <style>
+        html, body, #container {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+    </style>
+  <script src="https://webapi.amap.com/loader.js"></script>
+</head>
+<body>
+<div id="container" tabindex="0"></div>
+<script>
+    var map;
+    AMapLoader.load({ //首次调用 load
+        key:'309f07ac6bc48160e80b480ae511e1e9',//首次load key为必填
+        version:'2.0',
+        plugins:['AMap.Scale','AMap.ToolBar']
+    }).then((AMap)=>{
+        map = new AMap.Map('container');
+        map.addControl(new AMap.Scale())
+        map.addControl(new AMap.ToolBar())
+        map.add(new AMap.Marker({
+            position:map.getCenter()
+        }));
+    }).catch((e)=>{
+        console.error(e);
+    });
+   
+    AMapLoader.load({ //可多次调用load
+        plugins:['AMap.MapType']
+    }).then((AMap)=>{
+        map.addControl(new AMap.MapType())
+    }).catch((e)=>{
+        console.error(e);
+    });
+   
+</script>
+</body>
+</html>
+
+
+获取地图中心点：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+
+    #map-zoom, #map-center {
+      color: #0288d1;
+    }
+  </style>
+  <title>地图级别与中心点</title>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="info">
+    <h4>获取地图级别与中心点坐标</h4>
+    <p>当前级别：<span id="map-zoom">11</span></p>
+    <p>当前中心点：<span id="map-center">121.498586,31.239637</span></p>
+  </div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    //初始化地图
+    var map = new AMap.Map('container', {
+      zoom: 11, //初始地图级别
+      center: [121.498586, 31.239637], //初始地图中心点
+    });
+
+    //显示地图层级与中心点信息
+    function logMapinfo(){
+      var zoom = map.getZoom(); //获取当前地图级别
+      var center = map.getCenter(); //获取当前地图中心位置
+
+      document.querySelector("#map-zoom").innerText = zoom;
+      document.querySelector("#map-center").innerText = center.toString();
+    };
+
+    //绑定地图移动与缩放事件
+    map.on('moveend', logMapinfo);
+    map.on('zoomend', logMapinfo);
+  </script>
+</body>
+
+</html>
+
+
+设置地图中心点：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <title>设置地图级别与中心点</title>
+</head>
+
+<body>
+  <div id="container"></div>
+
+  <div class="input-card" style="width:24rem">
+    <h4>设置地图中心点</h4>
+    <div class="input-item">
+      <button id="random-zoom-btn" class="btn">随机地图层级 setZoom</button>
+    </div>
+    <div class="input-item">
+      <button id="random-center-btn" class="btn">随机地图中心点 setCenter</button>
+    </div>
+    <div class="input-item">
+      <button id="random-zoomcenter-btn" class="btn">随机地图层级与中心点 setZoomAndCenter</button>
+    </div>
+  </div>
+
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    //初始化地图
+    var map = new AMap.Map('container', {
+      zoom: 12, //初始地图级别
+      center: [121.498586, 31.239637], //初始地图中心点
+      showIndoorMap: false //关闭室内地图
+    });
+
+    //绑定按钮事件，改变地图层级
+    document.querySelector("#random-zoom-btn").onclick = function() {
+      var zoom = Math.floor(Math.random() * 7) + 11; //zoom范围[11,18]
+      map.setZoom(zoom); //设置地图层级
+      log.info(`当前层级已设为${zoom}级`);
+    }
+
+    //绑定按钮事件，改变地图中心点
+    document.querySelector("#random-center-btn").onclick = function() {
+      var lng = 121.138398 + Math.floor(Math.random() * 589828) / 1e6; //经度范围[121.138398, 121.728226]
+      var lat = 30.972688 + Math.floor(Math.random() * 514923) / 1e6; //纬度范围[30.972688, 31.487611]
+      map.setCenter([lng, lat]); //设置地图中心点
+      log.info(`当前中心点已设为 ${lng.toFixed(6)},${lat.toFixed(6)}`);
+    }
+
+    //绑定按钮事件，改变地图层级与中心点
+    document.querySelector("#random-zoomcenter-btn").onclick = function() {
+      var zoom = Math.floor(Math.random() * 7) + 11;
+      var lng = 121.138398 + Math.floor(Math.random() * 589828) / 1e6;
+      var lat = 30.972688 + Math.floor(Math.random() * 514923) / 1e6;
+      map.setZoomAndCenter(zoom, [lng, lat]); //同时设置地图层级与中心点
+      log.info(`当前层级已设为${zoom}级，中心点已设为 ${lng.toFixed(6)},${lat.toFixed(6)}`);
+    }
+  </script>
+</body>
+
+</html>
+
+
+获取地图当前行政区：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <link rel="stylesheet" type="text/css" href="https://a.amap.com/jsapi_demos/static/demo-center/css/prety-json.css">
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <title>获取地图当前行政区</title>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="info">
+    <h4>当前所在行政区信息</h4>
+    <p><span id="map-city"></span></p>
+  </div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/jquery-1.11.1.min.js" ></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/underscore-min.js" ></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/backbone-min.js" ></script>
+  <script type="text/javascript" src='https://a.amap.com/jsapi_demos/static/demo-center/js/prety-json.js'></script>
+  <script>
+    //初始化地图
+    var map = new AMap.Map('container', {
+      resizeEnable: true, //是否监控地图容器尺寸变化
+      zoom: 11, //初始地图级别
+    });
+
+    //获取并展示当前城市信息
+    function logMapinfo(){
+      map.getCity( function(info){
+        var node = new PrettyJSON.view.Node({
+            el: document.querySelector("#map-city"),
+            data: info
+        });
+      });
+    }
+
+    logMapinfo();
+
+    //绑定地图移动事件
+    map.on('moveend', logMapinfo);
+  </script>
+</body>
+
+</html>
+
+
+设置地图当前行政区：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>设置地图当前行政区</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="input-card" style="width:24rem;">
+    <h4>设置地图当前行政区</h4>
+    <div class="input-item">
+      <input id='city-name' placeholder="北京市" type="text" style="margin-right:1rem;"><button class="btn" id="query">去指定城市</button>
+    </div>
+  </div>
+
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    var map = new AMap.Map('container', {
+      center: [116.405285,39.904989]
+    });
+
+    //根据cityname、adcode、citycode设置地图位置
+    function gotoCity() {
+      var val = document.querySelector('#city-name').value; //可以是cityname、adcode、citycode
+      if (!val) {
+        val = "北京市";
+      }
+      map.setCity(val);
+      log.info(`已跳转至${val}`);
+    }
+
+    //绑定查询点击、回车事件
+    document.querySelector('#query').onclick = gotoCity;
+    document.querySelector('#city-name').onkeydown = function(e) {
+      if (e.keyCode === 13) {
+        gotoCity();
+        return false;
+      }
+      return true;
+    };
+  </script>
+</body>
+
+</html>
+
+
+
+设置获取地图显示范围：
+
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>地图显示范围</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .lnglat {
+      color: #0288d1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="info">
+    <h4>当前地图显示范围（Bounds）</h4>
+    <p>NorthEast坐标：<span id="ne" class="lnglat"></span></p>
+    <p>SouthWest坐标：<span id="sw" class="lnglat"></span></p>
+  </div>
+  <div class="input-card" style="width:16rem;">
+    <h4>控制地图显示范围</h4>
+    <div class="input-item">
+      <button class="btn" id="reset-bounds">指定地图显示范围</button>
+    </div>
+  </div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    //创建地图
+    var map = new AMap.Map('container', {
+      zoom: 10,
+      center: [116.405285, 39.904989],
+      showIndoorMap: false
+    });
+
+    //显示当前地图边界范围坐标
+    function logMapBounds() {
+      var bounds = map.getBounds();
+      document.querySelector("#ne").innerText = bounds.northEast.toString();
+      document.querySelector("#sw").innerText = bounds.southWest.toString();
+    }
+
+    logMapBounds();
+
+    //绑定地图移动与缩放事件
+    map.on('moveend', logMapBounds);
+    map.on('zoomend', logMapBounds);
+
+    //绑定按钮事件
+    document.querySelector("#reset-bounds").onclick = function() {
+      //通过 new AMap.Bounds(southWest:LngLat, northEast:LngLat) 或者 map.getBounds() 获得地图Bounds信息
+      var mybounds = new AMap.Bounds([116.319665, 39.855919], [116.468324,39.9756]);
+      map.setBounds(mybounds);
+    }
+  </script>
+</body>
+
+</html>
+
+限制地图显示范围：
+
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>地图显示范围</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+
+    .lnglat {
+      color: #0288d1;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="info">
+    <h4>地图限制区域信息</h4>
+    <p>NorthEast坐标：<span id="ne" class="lnglat"></span></p>
+    <p>SouthWest坐标：<span id="sw" class="lnglat"></span></p>
+  </div>
+  <div class="input-card" style="width:14rem;">
+    <h4>限制地图显示范围</h4>
+    <div class="input-item">
+      <button class="btn" id="lock-bounds">限定地图显示范围</button>
+    </div>
+    <div class="input-item">
+      <button class="btn" id="unlock-bounds">取消地图显示限制</button>
+    </div>
+  </div>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    //创建地图
+    var map = new AMap.Map('container', {
+      zoom: 11,
+      showIndoorMap: false
+    });
+
+    function logMapInfo() {
+      var limitBounds = map.getLimitBounds();
+      if (limitBounds) {
+        document.querySelector("#ne").innerText = limitBounds.northEast.toString();
+        document.querySelector("#sw").innerText = limitBounds.southWest.toString();
+      } else {
+        document.querySelector("#ne").innerText = document.querySelector("#sw").innerText = "未限定";
+      }
+    }
+
+    //限制地图显示范围
+    function lockMapBounds() {
+      var bounds = map.getBounds();
+      map.setLimitBounds(bounds);
+      logMapInfo();
+    }
+
+    //取消地图显示限制
+    function unlockMapBounds() {
+      map.clearLimitBounds();
+      logMapInfo();
+    }
+
+    //启用地图范围限定
+    lockMapBounds();
+    logMapInfo();
+
+    //绑定按钮事件
+    document.querySelector("#lock-bounds").onclick = lockMapBounds;
+    document.querySelector("#unlock-bounds").onclick = unlockMapBounds;
+  </script>
+</body>
+
+</html>
+
+
+
+
+
+地图的平移：
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>地图平移</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+   
+   <style>
+    html,
+    body,
+    #container {
+        width: 100%;
+        height: 100%;
+    }
+  </style>
+</head>
+<body>
+<div id="container"></div>
+<div class="input-card" style="width: auto">
+    <div class="input-item">
+        <input id="piexBtn" type="button" class="btn" value="平移像素值：(50,100)"/>
+    </div>
+    <div class="input-item">
+        <input id="pantoBtn" type="button" class="btn" value="地图中心点平移至：(116.405467,39.907761)"/>
+    </div>
+</div>
+<script>
+    var map = new AMap.Map('container', {
+        zoom: 13,
+        center: [116.397428, 39.90923]
+    });
+
+    document.getElementById('piexBtn').addEventListener('click', function() {
+        map.panBy(50, 100);
+    });
+    document.getElementById('pantoBtn').addEventListener('click', function() {
+        map.panTo([116.405467, 39.907761]);
+    });
+</script>
+</body>
+</html>
+
+
+交互控制：
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>交互控制</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <link rel="stylesheet" type="text/css" href="https://a.amap.com/jsapi_demos/static/demo-center/css/prety-json.css">
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="info">
+    <h4>当前地图状态（Status）</h4>
+    <p><span id="map-status"></span></p>
+  </div>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/underscore-min.js"></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/backbone-min.js"></script>
+  <script type="text/javascript" src="https://a.amap.com/jsapi_demos/static/demo-center/js/prety-json.js"></script>
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script>
+    var mapOpts = {
+      showIndoorMap: false, // 是否在有矢量底图的时候自动展示室内地图，PC默认true,移动端默认false
+      dragEnable: false, // 地图是否可通过鼠标拖拽平移，默认为true
+      keyboardEnable: false, //地图是否可通过键盘控制，默认为true
+      doubleClickZoom: false, // 地图是否可通过双击鼠标放大地图，默认为true
+      zoomEnable: false, //地图是否可缩放，默认值为true
+      rotateEnable: false, // 地图是否可旋转，3D视图默认为true，2D视图默认false
+    }
+    
+    //获取并展示地图状态信息
+    function logMapOptions() {
+      var node = new PrettyJSON.view.Node({
+        el: document.querySelector("#map-status"),
+        data: mapOpts
+      });
+    }
+
+    logMapOptions();
+    
+    //创建地图
+    var map = new AMap.Map('container', mapOpts);
+
+    //通过map.setStatus方法动态设置地图状态
+    /**
+    map.setStatus({
+      dragEnable: true,
+      keyboardEnable: true,
+      doubleClickZoom: true,
+      zoomEnable: true,
+      rotateEnable: true
+    });
+    */
+
+  </script>
+</body>
+
+</html>
+
+
+
+获取鼠标点击经纬度：
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>鼠标拾取地图坐标</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+</head>
+<style type="text/css">
+    html,body{
+        width: 100%;
+        height: 100%;
+        margin: 0px;
+    }
+    .map{
+        height: 100%;
+        width: 100%;
+        float: left;
+    }
+</style>
+<body>
+<div id="container" class="map"></div>
+<div class="input-card">
+    <h4>左击获取经纬度：</h4>
+    <div class="input-item">
+      <input type="text" readonly="true" id="lnglat">
+    </div>
+</div>
+
+<script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值&plugin=AMap.Autocomplete"></script>
+<script type="text/javascript">
+    var map = new AMap.Map("container", {
+        zoom: 11,
+    });
+    //为地图注册click事件获取鼠标点击出的经纬度坐标
+    map.on('click', function(e) {
+        document.getElementById("lnglat").value = e.lnglat.getLng() + ',' + e.lnglat.getLat()
+    });
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+覆盖物的添加和移除：
+
+
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>覆盖物的添加与移除</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://cache.amap.com/lbs/static/es5.min.js"></script>
+    <script type="text/javascript" src="https://cache.amap.com/lbs/static/addToolbar.js"></script>
+    <style>
+        html,
+        body,
+        #container {
+          width: 100%;
+          height: 100%;
+        }
+        
+        label {
+            width: 55px;
+            height: 26px;
+            line-height: 26px;
+            margin-bottom: 0;
+        }
+        button.btn {
+            width: 80px;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div class="input-card" style="width:24rem;">
+    <h4>添加、删除覆盖物</h4>
+    <div class="input-item">
+      <label>Marker：</label>
+      <button class="btn" id="add-marker" style="margin-right:1rem;">添加Marker</button>
+      <button class="btn" id="remove-marker">删除Marker</button>
+    </div>
+    <div class="input-item">
+      <label>Circle：</label>
+      <button class="btn" id="add-circle" style="margin-right:1rem;">添加Circle</button>
+      <button class="btn" id="remove-circle">删除Circle</button>
+    </div>
+  </div>
+<script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+<script>
+var map = new AMap.Map('container', {
+    resizeEnable: true,
+    zoom:11,
+    center: [116.397428, 39.90923]
+});
+    // 构造点标记
+var marker = new AMap.Marker({
+    icon: "https://webapi.amap.com/theme/v1.3/markers/n/mark_b.png",
+    position: [116.405467, 39.907761],
+    anchor:'bottom-center'
+});
+// 构造矢量圆形
+var circle = new AMap.Circle({
+    center: new AMap.LngLat("116.403322", "39.920255"), // 圆心位置
+    radius: 1000,  //半径
+    strokeColor: "#F33",  //线颜色
+    strokeOpacity: 1,  //线透明度
+    strokeWeight: 3,  //线粗细度
+    fillColor: "#ee2200",  //填充颜色
+    fillOpacity: 0.35 //填充透明度
+});
+
+
+//事件绑定
+document.querySelector("#add-marker").onclick = function() {
+    map.add(marker);
+    map.setFitView();
+}
+document.querySelector("#remove-marker").onclick = function() {
+    map.remove(marker);
+    map.setFitView();
+}
+document.querySelector("#add-circle").onclick = function() {
+    map.add(circle);
+    map.setFitView();
+}
+document.querySelector("#remove-circle").onclick = function() {
+    map.remove(circle);
+    map.setFitView();
+}
+
+</script>
+</body>
+</html>
+
+
+涂层的添加和移除：
+
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+  <title>图层的添加与移除</title>
+  <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+  <style>
+    html,
+    body,
+    #container {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="container"></div>
+  <div class="input-card" style="width:24rem;">
+    <h4>添加、删除图层（Layer）</h4>
+    <div class="input-item">
+      <label>卫星图层：</label>
+      <button class="btn" id="add-satellite-layer" style="margin-right:1rem;">添加卫星图层</button>
+      <button class="btn" id="remove-satellite-layer">删除卫星图层</button>
+    </div>
+    <div class="input-item">
+      <label>红色标记：</label>
+      <button class="btn" id="add-roadnet-layer" style="margin-right:1rem;">添加路网图层</button>
+      <button class="btn" id="remove-roadnet-layer">删除路网图层</button>
+    </div>
+  </div>
+
+  <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值"></script>
+  <script src="https://a.amap.com/jsapi_demos/static/demo-center/js/demoutils.js"></script>
+  <script>
+    //创建地图
+    var map = new AMap.Map('container', {
+      zoom: 11,
+      center: [116.405285, 39.904989]
+    });
+
+    // 构造官方卫星、路网图层
+    var satelliteLayer = new AMap.TileLayer.Satellite();
+    var roadNetLayer =  new AMap.TileLayer.RoadNet();
+
+    //批量添加图层
+    map.add([satelliteLayer, roadNetLayer]);
+
+    //事件绑定
+    document.querySelector("#add-satellite-layer").onclick = function() {
+      map.add(satelliteLayer);
+    }
+
+    document.querySelector("#remove-satellite-layer").onclick = function() {
+      map.remove(satelliteLayer);
+    }
+
+    document.querySelector("#add-roadnet-layer").onclick = function() {
+      map.add(roadNetLayer);
+    }
+
+    document.querySelector("#remove-roadnet-layer").onclick = function() {
+      map.remove(roadNetLayer);
+    }
+  </script>
+</body>
+
+</html>
+
+
+地图控件：
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no, width=device-width">
+    <title>带功能控件的地图</title>
+    <link rel="stylesheet" href="https://a.amap.com/jsapi_demos/static/demo-center/css/demo-center.css" />
+    <script src="https://cache.amap.com/lbs/static/es5.min.js"></script>
+    <script src="https://webapi.amap.com/maps?v=2.0&key=您申请的key值&&plugin=AMap.Scale,AMap.HawkEye,AMap.ToolBar,AMap.ControlBar"></script>
+    
+    <style>
+        html, body {
+            height: 100%;
+        }
+        #container {
+            height: 100%;
+        }
+        .input-card {
+            width: 150px;
+            top: 20px;
+            left: 20px;
+            bottom: auto;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+<div class='input-card'>
+    <div class="input-item">
+        <input type="checkbox" checked onclick="toggleScale(this)"/>比例尺
+    </div>
+    
+    <div class="input-item">
+        <input type="checkbox" checked id="toolbar" onclick="toggleToolBar(this)"/>工具条
+    </div>
+    
+    <div class="input-item">
+        <input type="checkbox" checked id="controlBar" onclick="toggleControlBar(this)"/>工具条方向盘
+    </div>
+    
+    <div class="input-item">
+        <input type="checkbox" checked id="overview" onclick="toggleOverViewShow(this)"/>显示鹰眼
+    </div>
+
+</div>
+<script>
+    var scale = new AMap.Scale(),
+    toolBar = new AMap.ToolBar({
+        position: {
+            top: '110px',
+            right: '40px'
+        }
+    }),
+    controlBar = new AMap.ControlBar({
+        position: {
+            top: '10px',
+            right: '10px',
+        }
+    }),
+    overView = new AMap.HawkEye({
+        opened: false
+    }),
+    map = new AMap.Map("container", {
+        viewMode: '3D',
+        zoom: 11,
+        pitch: 30,
+    });
+    map.addControl(scale);
+    map.addControl(toolBar);
+    map.addControl(controlBar);
+    map.addControl(overView);
+    function toggleScale(checkbox) {
+        if (checkbox.checked) {
+            scale.show();
+        } else {
+            scale.hide();
+        }
+    }
+    function toggleToolBar(checkbox) {
+        if (checkbox.checked) {
+            showToolBar();
+        } else {
+            hideToolBar();
+        }
+    }
+    function toggleControlBar(checkbox) {
+        if (checkbox.checked) {
+            controlBar.show()
+        } else {
+            controlBar.hide()
+        }
+    }
+    function toggleOverViewShow(checkbox) {
+        if (checkbox.checked) {
+            overView.show();
+        } else {
+            overView.hide();
+        }
+    }
+
+    function showToolBar() {
+        document.getElementById('toolbar').checked = true;
+        toolBar.show();
+    }
+    function hideToolBar() {
+        document.getElementById('toolbar').checked = false;
+        toolBar.hide();
+    }
+    function showControlBar() {
+        document.getElementById('controlBar').checked = true;
+        controlBar.show();
+    }
+    function hideControlBar() {
+        document.getElementById('controlBar').checked = false;
+        controlBar.hide();
+    }
+</script>
+</body>
+</html>
+
+
+
+
