@@ -1,5 +1,5 @@
 <template>
-  <div class="page-container">
+  <div class="page-container map-interaction">
     <!-- Semi-transparent overlay for controls -->
     <div class="bg-white bg-opacity-90 shadow-sm border-b border-gray-200 safe-area-top">
       <div class="flex items-center justify-between px-4 py-3">
@@ -32,7 +32,7 @@
         </select>
       </div>
 
-      <div class="flex items-center justify-between">
+      <div class="flex items-center justify-between mb-2">
         <span class="text-sm text-gray-700">Current Location</span>
         <span 
           class="text-xs"
@@ -40,6 +40,22 @@
         >
           {{ locationState.message }}
         </span>
+      </div>
+      
+      <div class="flex items-center justify-between">
+        <span class="text-sm text-gray-700">Orientation Tracking</span>
+        <button 
+          @click="toggleOrientationTracking" 
+          class="flex items-center px-2 py-1 rounded text-xs"
+          :class="isOrientationTracking ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'"
+        >
+          <Icon 
+            name="heroicons:compass" 
+            class="w-4 h-4 mr-1"
+            :class="{ 'text-blue-600': isOrientationTracking }"
+          />
+          {{ isOrientationTracking ? 'Enabled' : 'Enable' }}
+        </button>
       </div>
     </div>
 
@@ -159,9 +175,8 @@ const selectedVehicle = ref('bicycle')
 const elapsedTime = ref(0)
 const currentSpeed = ref(0)
 const currentHeading = ref(0) // Add heading tracking
-
 // Get the global map state
-const { currentLocation, locationError } = useGlobalMap()
+const { currentLocation, locationError, isOrientationTracking, startOrientationTracking, stopOrientationTracking } = useGlobalMap()
 
 // Computed property for location state message and styling
 const locationState = computed(() => {
@@ -289,11 +304,37 @@ watch(() => currentLocation.value, (newLocation) => {
   }
 }, { deep: true })
 
+// Toggle device orientation tracking
+const toggleOrientationTracking = async () => {
+  try {
+    if (isOrientationTracking.value) {
+      stopOrientationTracking()
+    } else {
+      const success = await startOrientationTracking()
+      
+      if (!success) {
+        alert('Could not start orientation tracking. Make sure your device supports it and you have granted permission.')
+      }
+    }
+  } catch (err) {
+    console.error('Error toggling orientation tracking:', err)
+    alert('Failed to toggle orientation tracking: ' + (err.message || 'Unknown error'))
+  }
+}
+
 // Cleanup on unmount
 onUnmounted(() => {
+  // Stop timer
   stopTimer()
+  
+  // Clean up any ongoing recording
   if (isRecording.value) {
     stopRecording()
+  }
+  
+  // Stop orientation tracking
+  if (isOrientationTracking.value) {
+    stopOrientationTracking()
   }
 })
 </script>
@@ -308,6 +349,17 @@ onUnmounted(() => {
   position: relative;
 }
 
+/* Special class for pages that need map interaction */
+.map-interaction {
+  /* Make the container itself transparent to pointer events */
+  pointer-events: none !important;
+}
+
+/* But make all direct children interactive */
+.map-interaction > * {
+  pointer-events: auto !important;
+}
+
 .ride-controls {
   position: fixed;
   bottom: 72px; /* Height of mobile nav + some padding */
@@ -318,6 +370,7 @@ onUnmounted(() => {
   border-top: 1px solid rgba(229, 231, 235, 0.8);
   padding: 1rem;
   z-index: 10;
+  pointer-events: auto !important; /* Ensure controls remain interactive */
 }
 
 .status-indicator {

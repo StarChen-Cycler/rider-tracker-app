@@ -177,5 +177,15 @@ export const FEATURE_FLAGS = {
   pushNotifications: true
 }
 
+// Location correction deltas to adjust for GPS bias
+export const LOCATION_CORRECTION = {
+  // Correction values calculated from provided coordinates
+  // Actual: 22.91294, 113.843313
+  // API: 22.915696, 113.838358
+  // Delta = Actual - API
+  LAT_DELTA: -0.002756, // 22.91294 - 22.915696
+  LNG_DELTA: 0.004955   // 113.843313 - 113.838358
+}
+
 export type VehicleType = typeof VEHICLE_TYPES[keyof typeof VEHICLE_TYPES]
 export type RideStatus = typeof RIDE_STATUSES[keyof typeof RIDE_STATUSES] 

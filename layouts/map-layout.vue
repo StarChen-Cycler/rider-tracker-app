@@ -16,7 +16,7 @@
     </div>
     
     <!-- Current Location Button (Fixed Position) -->
-    <div class="fixed bottom-20 right-4 z-20">
+    <div class="fixed bottom-72 right-4 z-20">
       <button
         @click="locateUser"
         class="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:bg-gray-100"
@@ -183,7 +183,7 @@ onMounted(async () => {
         await getUserLocation()
         console.log('Global map is ready with user location')
         
-        // Center map on user location if available
+        // Center map on user location if available with fast transition
         if (map) {
           await centerOnCurrentLocation(map)
         }
@@ -282,6 +282,10 @@ defineExpose({
   z-index: 10;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
+  pointer-events: none; /* Allow map interaction by default */
+}
+.content-overlay > * {
+  pointer-events: auto; /* Re-enable pointer events for actual UI elements */
 }
 
 /* Mobile navigation styles */

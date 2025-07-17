@@ -1,4 +1,5 @@
 import { ref, reactive, onMounted, onUnmounted, watch, readonly } from 'vue'
+import { LOCATION_CORRECTION } from '~/utils/constants'
 
 // Amap composable for map integration
 export const useAmap = () => {
@@ -123,8 +124,8 @@ export const useLocation = () => {
       })
       
       currentLocation.value = {
-        lat: position.coords.latitude,
-        lng: position.coords.longitude,
+        lat: position.coords.latitude + LOCATION_CORRECTION.LAT_DELTA,
+        lng: position.coords.longitude + LOCATION_CORRECTION.LNG_DELTA,
         accuracy: position.coords.accuracy,
         timestamp: position.timestamp,
         heading: position.coords.heading !== null ? position.coords.heading : undefined,
@@ -160,7 +161,7 @@ export const useLocation = () => {
     isTracking.value = false
   }
 
-  const getCurrentPosition = (): Promise<{
+  const getCurrentPosition = async (): Promise<{
     lat: number
     lng: number
     accuracy: number
@@ -186,8 +187,8 @@ export const useLocation = () => {
           })
           
           resolve({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
+            lat: position.coords.latitude + LOCATION_CORRECTION.LAT_DELTA,
+            lng: position.coords.longitude + LOCATION_CORRECTION.LNG_DELTA,
             accuracy: position.coords.accuracy,
             timestamp: position.timestamp,
             heading: position.coords.heading !== null ? position.coords.heading : undefined,
@@ -421,15 +422,15 @@ export const useAmapInstance = () => {
     }
   }
 
-  const setCenter = (center: [number, number]) => {
+  const setCenter = (center: [number, number], immediately: boolean = false, duration?: number) => {
     if (mapInstance.value) {
-      mapInstance.value.setCenter(center)
+      mapInstance.value.setCenter(center, immediately, duration)
     }
   }
 
-  const setZoom = (zoom: number) => {
+  const setZoom = (zoom: number, immediately: boolean = false, duration?: number) => {
     if (mapInstance.value) {
-      mapInstance.value.setZoom(zoom)
+      mapInstance.value.setZoom(zoom, immediately, duration)
     }
   }
 

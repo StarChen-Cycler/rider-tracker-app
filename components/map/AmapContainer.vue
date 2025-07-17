@@ -42,6 +42,20 @@
         />
       </button>
       
+      <!-- Compass/Orientation Tracking Button -->
+      <button
+        v-if="showOrientationButton"
+        @click="toggleOrientationTracking"
+        class="w-10 h-10 bg-white rounded-lg shadow-md flex items-center justify-center hover:bg-gray-50"
+        :class="{ 'bg-blue-100': isOrientationTracking }"
+      >
+        <Icon 
+          name="heroicons:compass" 
+          class="w-5 h-5"
+          :class="{ 'text-primary-600': isOrientationTracking }"
+        />
+      </button>
+      
       <button
         v-if="showCenterButton"
         @click="centerMap"
@@ -54,8 +68,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useAmapInstance, useLocation } from '~/composables/useAmap'
+import { useGlobalMap } from '~/composables/useGlobalMap'
 import LoadingSpinner from '~/components/ui/LoadingSpinner.vue'
 
 const emit = defineEmits(['map-ready', 'map-error', 'location-change'])
@@ -77,6 +92,10 @@ const props = defineProps({
     type: Boolean,
     default: true
   },
+  showOrientationButton: {
+    type: Boolean,
+    default: true
+  },
   mapOptions: {
     type: Object,
     default: () => ({})
@@ -93,6 +112,7 @@ const props = defineProps({
 
 const { createMap, mapInstance, setCenter, setZoom, fitView, addDirectionMarker, updateDirectionMarker } = useAmapInstance()
 const { getCurrentPosition } = useLocation()
+const { isOrientationTracking, startOrientationTracking, stopOrientationTracking } = useGlobalMap()
 
 const isLoading = ref(true)
 const error = ref(null)
@@ -161,8 +181,8 @@ const locateUser = async () => {
     
     if (mapInstance.value) {
       const center = [position.lng, position.lat]
-      setCenter(center)
-      setZoom(16)
+      setCenter(center, false, 500) // Fast transition - 500ms duration
+      setZoom(16, false, 500) // Fast transition - 500ms duration
       
       // Update heading if available
       if (position.heading !== undefined) {
@@ -198,15 +218,47 @@ const retryLoad = () => {
   initMap()
 }
 
+// Toggle device orientation tracking
+const toggleOrientationTracking = async () => {
+  try {
+    if (isOrientationTracking.value) {
+      stopOrientationTracking()
+    } else {
+      const success = await startOrientationTracking()
+      
+      if (!success) {
+        error.value = 'Could not start orientation tracking. Make sure your device supports it and you have granted permission.'
+        setTimeout(() => {
+          error.value = null
+        }, 3000)
+      }
+    }
+  } catch (err) {
+    console.error('Error toggling orientation tracking:', err)
+    error.value = err.message || 'Failed to toggle orientation tracking'
+    setTimeout(() => {
+      error.value = null
+    }, 3000)
+  }
+}
+
 onMounted(() => {
   initMap()
+})
+
+onUnmounted(() => {
+  // Clean up orientation tracking when component is unmounted
+  if (isOrientationTracking.value) {
+    stopOrientationTracking()
+  }
 })
 
 // Expose methods for parent component
 defineExpose({
   mapInstance,
   locateUser,
-  centerMap
+  centerMap,
+  toggleOrientationTracking
 })
 </script>
 

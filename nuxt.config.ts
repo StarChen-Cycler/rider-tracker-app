@@ -2,6 +2,11 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
+  devServer: {
+    https: true, // 启用 HTTPS
+    host: '0.0.0.0',
+    port: 3000
+  },
   modules: [
     '@nuxt/eslint', 
     '@nuxt/icon', 

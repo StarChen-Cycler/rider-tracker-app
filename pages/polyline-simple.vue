@@ -321,8 +321,8 @@ const getUserLocation = async () => {
     })
     
     const userLocation = [position.coords.longitude, position.coords.latitude]
-    map.setCenter(userLocation)
-    map.setZoom(16)
+    map.setCenter(userLocation, false, 500) // Fast transition - 500ms duration
+    map.setZoom(16, false, 500) // Fast transition - 500ms duration
     
     console.log('Successfully got user location:', userLocation)
     status.value = 'Ready'
