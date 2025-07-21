@@ -2,6 +2,7 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
+  ssr: true, 
   devServer: {
     https: true, // 启用 HTTPS
     host: '0.0.0.0',
@@ -42,6 +43,10 @@ export default defineNuxtConfig({
   // Runtime config for environment variables
   runtimeConfig: {
     public: {
+      // MemFire Cloud configuration (compatible with Supabase)
+      memfireUrl: process.env.NUXT_PUBLIC_MEMFIRE_URL,
+      memfireAnonKey: process.env.NUXT_PUBLIC_MEMFIRE_ANON_KEY,
+      // Legacy Supabase configuration (deprecated)
       supabaseUrl: process.env.NUXT_PUBLIC_SUPABASE_URL,
       supabaseAnonKey: process.env.NUXT_PUBLIC_SUPABASE_ANON_KEY,
       amapKey: process.env.NUXT_PUBLIC_AMAP_KEY,

@@ -6,7 +6,7 @@
     </main>
 
     <!-- Mobile Navigation -->
-    <nav class="mobile-nav">
+    <nav class="mobile-nav ">
       <div class="flex items-center justify-around py-2 px-4">
         <NuxtLink
           to="/"

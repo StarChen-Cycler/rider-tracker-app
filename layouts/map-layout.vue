@@ -112,7 +112,8 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useGlobalMap } from '~/composables/useGlobalMap'
+import { useGlobalMapProvider } from '~/composables/useGlobalMap'
+import { useMapSettingsProvider } from '~/composables/useMapSettings'
 import { useAmap } from '~/composables/useAmap'
 
 const globalMapRef = ref(null)
@@ -120,7 +121,17 @@ const isLocatingUser = ref(false) // Local state for UI updates
 const showLocationError = ref(false)
 const locationErrorMessage = ref('Please enable location services to use this feature.')
 
-const { setMapInstance, centerOnCurrentLocation, getUserLocation } = useGlobalMap()
+// Initialize providers
+const globalMapProvider = useGlobalMapProvider()
+useMapSettingsProvider() // Initialize provider for child components
+
+const { 
+  setMapInstance, 
+  centerOnCurrentLocation, 
+  getUserLocation, 
+  startLocationTracking,
+  startOrientationTracking 
+} = globalMapProvider
 const { loadAmapScript, isLoaded } = useAmap()
 
 // Add padding bottom to account for mobile navigation
@@ -146,15 +157,16 @@ onMounted(async () => {
         await loadAmapScript()
       }
       
-      // Initialize map
+      // Initialize map with default theme from map settings
       map = new window.AMap.Map('global-map-container', {
         zoom: 16,
-        mapStyle: 'amap://styles/normal',
+        mapStyle: 'amap://styles/dark', // Use default theme from map settings
         resizeEnable: true,
         rotateEnable: true,
         pitchEnable: true,
         zoomEnable: true,
-        dragEnable: true
+        dragEnable: true,
+        features: ['bg', 'road', 'building', 'point'] // Use default features from map settings
       })
       
       // Load required plugins
@@ -204,6 +216,25 @@ onMounted(async () => {
           }
           showLocationError.value = true
         }
+      }
+
+      // Auto-start location and orientation tracking after map is ready
+      console.log('🗺️ Map ready, starting location and orientation tracking...')
+      
+      try {
+        // Start location tracking for continuous GPS updates
+        await startLocationTracking()
+        console.log('✅ Location tracking started automatically')
+      } catch (error) {
+        console.warn('⚠️ Failed to start location tracking:', error)
+      }
+
+      try {
+        // Start orientation tracking for compass functionality
+        await startOrientationTracking()
+        console.log('✅ Orientation tracking started automatically')
+      } catch (error) {
+        console.warn('⚠️ Failed to start orientation tracking:', error)
       }
     } catch (error) {
       console.error('Failed to initialize map:', error)

@@ -1,8 +1,12 @@
-import { ref, readonly, provide, inject, reactive, toRef } from 'vue'
+import { ref, readonly, provide, inject, reactive, toRef, watch } from 'vue'
 import type { Ref } from 'vue'
 import { LOCATION_CORRECTION } from '~/utils/constants'
 // Import arrow SVG
 import arrowSvgTemplate from '~/assets/svg/arrow.svg?raw'
+// Import orientation tracking composable
+import { useOrientTracking } from './useOrientTracking'
+// Import location tracking composable
+import { useLocationTracking } from './useLocationTracking'
 
 // Define types for location and map reference
 interface Location {
@@ -17,9 +21,9 @@ interface Location {
 // Symbol for dependency injection
 const GLOBAL_MAP_KEY = Symbol('global-map')
 
-// Function to get arrow SVG with the proper angle
-const getArrowSvg = (angle: number): string => {
-  return arrowSvgTemplate.replace('${angle}', angle.toString())
+// Function to get arrow SVG (no angle needed since we'll use CSS transforms)
+const getArrowSvg = (): string => {
+  return arrowSvgTemplate
 }
 
 // Create a reactive store for global state that persists across components
@@ -30,13 +34,19 @@ const globalMapStore = reactive({
   locationError: null as Error | null,
   directionMarker: null as any, // Add direction marker reference
   lastHeading: 0, // Store the last known heading
-  deviceOrientation: 0, // Add device orientation tracking
-  isOrientationTracking: false, // Track if orientation is being monitored
   mapRotation: 0, // Track map rotation
-  orientationHandler: null as any, // Store the orientation handler for proper cleanup
 })
 
+// ================================================ PROVIDER COMPOSABLE ================================================
 export const useGlobalMapProvider = () => {
+  // Initialize orientation tracking composable
+  const orientationTracking = useOrientTracking()
+  
+  // Initialize location tracking composable
+  const locationTracking = useLocationTracking()
+
+  // ================================================ MARKER ORIENTATION TRACKING AND CONTROL================================================
+  
   // Set the map instance
   const setMapInstance = (instance: any) => {
     globalMapStore.mapInstance = instance
@@ -52,6 +62,15 @@ export const useGlobalMapProvider = () => {
       })
     }
   }
+  
+  // Watch for orientation changes to trigger arrow updates
+  watch(() => orientationTracking.deviceOrientation.value, () => {
+    updateArrowWithRelativeOrientation()
+  })
+  
+  watch(() => orientationTracking.isTracking.value, () => {
+    updateArrowWithRelativeOrientation()
+  })
 
   // Calculate the actual arrow angle considering both device orientation and map rotation
   const calculateArrowAngle = (deviceHeading: number, mapRotation: number): number => {
@@ -73,9 +92,9 @@ export const useGlobalMapProvider = () => {
     
     let arrowAngle = 0
     
-    if (globalMapStore.isOrientationTracking) {
+    if (orientationTracking.isTracking.value) {
       // Use device orientation relative to map
-      arrowAngle = calculateArrowAngle(globalMapStore.deviceOrientation, globalMapStore.mapRotation)
+      arrowAngle = calculateArrowAngle(orientationTracking.deviceOrientation.value, globalMapStore.mapRotation)
     } else {
       // Use GPS heading or last known heading relative to map
       const gpsHeading = globalMapStore.currentLocation.heading !== undefined 
@@ -88,76 +107,16 @@ export const useGlobalMapProvider = () => {
     updateDirectionMarker(globalMapStore.directionMarker, position, arrowAngle)
   }
 
-  // Start device orientation tracking
+  // Orientation tracking methods (delegated to orientation composable)
   const startOrientationTracking = async () => {
-    if (typeof window === 'undefined' || globalMapStore.isOrientationTracking) return false
-    
-    if (window.DeviceOrientationEvent) {
-      // For iOS 13+ devices, need to request permission
-      if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-        try {
-          const permissionState = await (DeviceOrientationEvent as any).requestPermission();
-          if (permissionState !== 'granted') {
-            console.warn('Device orientation permission not granted')
-            return false
-          }
-        } catch (error) {
-          console.error('Error requesting device orientation permission:', error)
-          return false
-        }
-      }
-      
-      // Create the orientation handler
-      const handleOrientation = (event: DeviceOrientationEvent) => {
-        if (event.alpha !== null) {
-          // For most devices, alpha represents the compass heading
-          // Convert to proper heading: 0° = North, 90° = East, 180° = South, 270° = West
-          let heading = event.alpha
-          
-          // Handle different device orientations
-          if (event.webkitCompassHeading !== undefined) {
-            // iOS devices provide webkitCompassHeading which is more accurate
-            heading = event.webkitCompassHeading
-          } else {
-            // Android devices: alpha is typically 0-360 where 0 is North
-            // But we need to account for the device's natural orientation
-            heading = (360 - event.alpha) % 360
-          }
-          
-          globalMapStore.deviceOrientation = heading
-          updateArrowWithRelativeOrientation()
-        }
-      }
-      
-      // Store the handler for proper cleanup
-      globalMapStore.orientationHandler = handleOrientation
-      
-      window.addEventListener('deviceorientation', handleOrientation, true)
-      globalMapStore.isOrientationTracking = true
-      console.log('Device orientation tracking started')
-      return true
-    } else {
-      console.warn('Device orientation not supported')
-      return false
-    }
+    return await orientationTracking.startTracking()
   }
   
-  // Stop device orientation tracking
   const stopOrientationTracking = () => {
-    if (typeof window === 'undefined' || !globalMapStore.isOrientationTracking) return
-    
-    // Remove the specific handler we stored
-    if (globalMapStore.orientationHandler) {
-      window.removeEventListener('deviceorientation', globalMapStore.orientationHandler, true)
-      globalMapStore.orientationHandler = null
-    }
-    
-    globalMapStore.isOrientationTracking = false
-    console.log('Device orientation tracking stopped')
-    
-    // Update arrow to use GPS heading instead
-    updateArrowWithRelativeOrientation()
+    orientationTracking.stopTracking()
   }
+
+  // ================================================ MARKER LOCATION TRACKING AND CONTROL ================================================
 
   // Update current location
   const updateCurrentLocation = (location: Location | null) => {
@@ -184,8 +143,8 @@ export const useGlobalMapProvider = () => {
   const createDirectionMarker = (position: [number, number], angle: number = 0) => {
     if (!globalMapStore.mapInstance) return null
 
-    // Use the imported SVG with the angle
-    const arrowSvg = getArrowSvg(angle)
+    // Use the imported SVG (no angle needed, we'll use CSS transforms)
+    const arrowSvg = getArrowSvg()
 
     // Check if AMap is available
     if (!window.AMap) {
@@ -198,6 +157,7 @@ export const useGlobalMapProvider = () => {
       title: 'Current Location',
       anchor: 'center',
       zIndex: 300,
+      angle: angle, // Use AMap's built-in rotation
       icon: new window.AMap.Icon({
         size: new window.AMap.Size(32, 32),
         image: 'data:image/svg+xml;base64,' + btoa(arrowSvg),
@@ -206,6 +166,7 @@ export const useGlobalMapProvider = () => {
     })
 
     globalMapStore.mapInstance.add(marker)
+    
     return marker
   }
 
@@ -216,20 +177,10 @@ export const useGlobalMapProvider = () => {
     // Update position
     marker.setPosition(position)
     
-    // Use the imported SVG with the angle
-    const arrowSvg = getArrowSvg(angle)
-
-    // Check if AMap is available
-    if (!window.AMap) {
-      console.error('AMap is not loaded yet')
-      return
+    // Use AMap's built-in rotation for smooth rotation
+    if (marker.setAngle) {
+      marker.setAngle(angle)
     }
-
-    marker.setIcon(new window.AMap.Icon({
-      size: new window.AMap.Size(32, 32),
-      image: 'data:image/svg+xml;base64,' + btoa(arrowSvg),
-      imageSize: new window.AMap.Size(32, 32)
-    }))
   }
 
   // Update location marker (create or update)
@@ -356,13 +307,33 @@ export const useGlobalMapProvider = () => {
     }
   }
 
+  // Location tracking methods (delegated to location tracking composable)
+  const startLocationTracking = async () => {
+    return await locationTracking.startLocationTracking(getUserLocation)
+  }
+
+  const stopLocationTracking = () => {
+    locationTracking.stopLocationTracking()
+  }
+
+  const toggleLocationTracking = async () => {
+    return await locationTracking.toggleLocationTracking(getUserLocation)
+  }
+
   // Create refs directly from the reactive store
   const mapInstance = toRef(globalMapStore, 'mapInstance')
   const isMapReady = toRef(globalMapStore, 'isMapReady')
   const currentLocation = toRef(globalMapStore, 'currentLocation')
   const locationError = toRef(globalMapStore, 'locationError')
   const directionMarker = toRef(globalMapStore, 'directionMarker')
-  const isOrientationTracking = toRef(globalMapStore, 'isOrientationTracking')
+  
+  // Expose orientation tracking state
+  const isOrientationTracking = orientationTracking.isTracking
+  
+  // Expose location tracking state
+  const isLocationTracking = locationTracking.isLocationTracking
+  const locationTrackingError = locationTracking.locationTrackingError
+  const lastLocationUpdate = locationTracking.lastLocationUpdate
 
   // Expose methods and state
   const globalMapState = {
@@ -372,13 +343,19 @@ export const useGlobalMapProvider = () => {
     locationError,
     directionMarker,
     isOrientationTracking,
+    isLocationTracking,
+    locationTrackingError,
+    lastLocationUpdate,
     setMapInstance,
     updateCurrentLocation,
     centerOnCurrentLocation,
     getUserLocation,
     updateLocationMarker,
     startOrientationTracking,
-    stopOrientationTracking
+    stopOrientationTracking,
+    startLocationTracking,
+    stopLocationTracking,
+    toggleLocationTracking
   }
 
   // Provide the global map state to child components
@@ -389,8 +366,23 @@ export const useGlobalMapProvider = () => {
   return globalMapState
 }
 
-// Consumer composable
+// ================================================ CONSUMER COMPOSABLE ================================================
 export const useGlobalMap = () => {
+  // Initialize orientation tracking composable for consumer
+  const orientationTracking = useOrientTracking()
+  
+  // Initialize location tracking composable for consumer
+  const locationTracking = useLocationTracking()
+  
+  // Watch for orientation changes to trigger arrow updates
+  watch(() => orientationTracking.deviceOrientation.value, () => {
+    updateArrowWithRelativeOrientation()
+  })
+  
+  watch(() => orientationTracking.isTracking.value, () => {
+    updateArrowWithRelativeOrientation()
+  })
+  
   // Create a direct access to the global store
   const directAccess = {
     mapInstance: toRef(globalMapStore, 'mapInstance'),
@@ -398,7 +390,10 @@ export const useGlobalMap = () => {
     currentLocation: toRef(globalMapStore, 'currentLocation'),
     locationError: toRef(globalMapStore, 'locationError'),
     directionMarker: toRef(globalMapStore, 'directionMarker'),
-    isOrientationTracking: toRef(globalMapStore, 'isOrientationTracking'),
+    isOrientationTracking: orientationTracking.isTracking,
+    isLocationTracking: locationTracking.isLocationTracking,
+    locationTrackingError: locationTracking.locationTrackingError,
+    lastLocationUpdate: locationTracking.lastLocationUpdate,
     setMapInstance: (instance: any) => {
       globalMapStore.mapInstance = instance
       globalMapStore.isMapReady = true
@@ -562,74 +557,26 @@ export const useGlobalMap = () => {
       }
     },
     
-    // Add orientation tracking methods
+    // Add orientation tracking methods (delegated to orientation composable)
     startOrientationTracking: async () => {
-      if (typeof window === 'undefined' || globalMapStore.isOrientationTracking) return false
-      
-      if (window.DeviceOrientationEvent) {
-        // For iOS 13+ devices, need to request permission
-        if (typeof (DeviceOrientationEvent as any).requestPermission === 'function') {
-          try {
-            const permissionState = await (DeviceOrientationEvent as any).requestPermission();
-            if (permissionState !== 'granted') {
-              console.warn('Device orientation permission not granted')
-              return false
-            }
-          } catch (error) {
-            console.error('Error requesting device orientation permission:', error)
-            return false
-          }
-        }
-        
-        // Create the orientation handler
-        const handleOrientation = (event: DeviceOrientationEvent) => {
-          if (event.alpha !== null) {
-            // For most devices, alpha represents the compass heading
-            // Convert to proper heading: 0° = North, 90° = East, 180° = South, 270° = West
-            let heading = event.alpha
-            
-            // Handle different device orientations
-            if (event.webkitCompassHeading !== undefined) {
-              // iOS devices provide webkitCompassHeading which is more accurate
-              heading = event.webkitCompassHeading
-            } else {
-              // Android devices: alpha is typically 0-360 where 0 is North
-              // But we need to account for the device's natural orientation
-              heading = (360 - event.alpha) % 360
-            }
-            
-            globalMapStore.deviceOrientation = heading
-            updateArrowWithRelativeOrientation()
-          }
-        }
-        
-        // Store the handler for proper cleanup
-        globalMapStore.orientationHandler = handleOrientation
-        
-        window.addEventListener('deviceorientation', handleOrientation, true)
-        globalMapStore.isOrientationTracking = true
-        console.log('Device orientation tracking started')
-        return true
-      } else {
-        console.warn('Device orientation not supported')
-        return false
-      }
+      return await orientationTracking.startTracking()
     },
     
     stopOrientationTracking: () => {
-      if (typeof window === 'undefined' || !globalMapStore.isOrientationTracking) return
-      
-      // Remove the specific handler we stored
-      if (globalMapStore.orientationHandler) {
-        window.removeEventListener('deviceorientation', globalMapStore.orientationHandler, true)
-        globalMapStore.orientationHandler = null
-      }
-      
-      globalMapStore.isOrientationTracking = false
-      console.log('Device orientation tracking stopped')
-      
-      // Update arrow to use GPS heading instead
-      updateArrowWithRelativeOrientation()
+      orientationTracking.stopTracking()
+    },
+    
+    // Location tracking methods (delegated to location tracking composable)
+    startLocationTracking: async () => {
+      return await locationTracking.startLocationTracking(directAccess.getUserLocation)
+    },
+    
+    stopLocationTracking: () => {
+      locationTracking.stopLocationTracking()
+    },
+    
+    toggleLocationTracking: async () => {
+      return await locationTracking.toggleLocationTracking(directAccess.getUserLocation)
     }
   }
 
@@ -645,9 +592,9 @@ export const useGlobalMap = () => {
     
     let arrowAngle = 0
     
-    if (globalMapStore.isOrientationTracking) {
+    if (orientationTracking.isTracking.value) {
       // Use device orientation relative to map
-      arrowAngle = calculateArrowAngle(globalMapStore.deviceOrientation, globalMapStore.mapRotation)
+      arrowAngle = calculateArrowAngle(orientationTracking.deviceOrientation.value, globalMapStore.mapRotation)
     } else {
       // Use GPS heading or last known heading relative to map
       const gpsHeading = globalMapStore.currentLocation.heading !== undefined 
@@ -658,23 +605,21 @@ export const useGlobalMap = () => {
     
     const position: [number, number] = [globalMapStore.currentLocation.lng, globalMapStore.currentLocation.lat]
     
-    // Update the marker
+    // Update the marker with smooth rotation
     if (globalMapStore.directionMarker && window.AMap) {
       globalMapStore.directionMarker.setPosition(position)
       
-      const arrowSvg = getArrowSvg(arrowAngle)
-      globalMapStore.directionMarker.setIcon(new window.AMap.Icon({
-        size: new window.AMap.Size(32, 32),
-        image: 'data:image/svg+xml;base64,' + btoa(arrowSvg),
-        imageSize: new window.AMap.Size(32, 32)
-      }))
+      // Use AMap's built-in rotation for smooth rotation
+      if (globalMapStore.directionMarker.setAngle) {
+        globalMapStore.directionMarker.setAngle(arrowAngle)
+      }
     }
   }
 
   const createDirectionMarker = (position: [number, number], angle: number = 0) => {
     if (!globalMapStore.mapInstance || !window.AMap) return null
 
-    const arrowSvg = getArrowSvg(angle)
+    const arrowSvg = getArrowSvg()
     const marker = new window.AMap.Marker({
       position,
       title: 'Current Location',
@@ -688,6 +633,12 @@ export const useGlobalMap = () => {
     })
 
     globalMapStore.mapInstance.add(marker)
+    
+    // Apply initial rotation using AMap's built-in rotation
+    if (marker.setAngle) {
+      marker.setAngle(angle)
+    }
+    
     return marker
   }
   
@@ -698,14 +649,9 @@ export const useGlobalMap = () => {
   return globalMap || directAccess
 } 
 
-// Add global type declaration for AMap and DeviceOrientationEvent
+// Add global type declaration for AMap
 declare global {
   interface Window {
     AMap: any
-    DeviceOrientationEvent: any
-  }
-  
-  interface DeviceOrientationEvent {
-    webkitCompassHeading?: number
   }
 } 

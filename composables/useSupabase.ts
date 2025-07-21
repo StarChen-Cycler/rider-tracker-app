@@ -5,9 +5,10 @@ import type { User } from '@supabase/supabase-js'
 export const useSupabase = () => {
   const config = useRuntimeConfig()
   
+  // Use MemFire Cloud endpoints (compatible with Supabase client)
   const supabase = createClient<Database>(
-    config.public.supabaseUrl as string,
-    config.public.supabaseAnonKey as string
+    config.public.memfireUrl as string,
+    config.public.memfireAnonKey as string
   )
 
   return {

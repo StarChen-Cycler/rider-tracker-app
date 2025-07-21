@@ -109,7 +109,7 @@ export const DEFAULT_PREFERENCES = {
     showInLeaderboard: false
   },
   tracking: {
-    autoStart: false,
+    autoStart: true, // Enable auto-start for better UX
     pauseOnStop: true,
     highAccuracy: true,
     saveOffline: true
