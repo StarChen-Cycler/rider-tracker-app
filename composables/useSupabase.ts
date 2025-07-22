@@ -6,9 +6,10 @@ export const useSupabase = () => {
   const config = useRuntimeConfig()
   
   // Use MemFire Cloud endpoints (compatible with Supabase client)
+  // Fallback to legacy Supabase variables for backward compatibility
   const supabase = createClient<Database>(
-    config.public.memfireUrl as string,
-    config.public.memfireAnonKey as string
+    (config.public.memfireUrl || config.public.supabaseUrl) as string,
+    (config.public.memfireAnonKey || config.public.supabaseAnonKey) as string
   )
 
   return {
