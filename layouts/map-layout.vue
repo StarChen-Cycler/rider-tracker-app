@@ -15,8 +15,8 @@
       </ClientOnly>
     </div>
     
-    <!-- Current Location Button (Fixed Position) -->
-    <div class="fixed bottom-72 right-4 z-20">
+    <!-- Current Location Button (Fixed Position) - Only visible on track page -->
+    <div v-if="$route.path === '/track'" class="fixed bottom-72 right-4 z-20">
       <button
         @click="locateUser"
         class="w-12 h-12 bg-white rounded-full shadow-lg flex items-center justify-center hover:bg-gray-50 active:bg-gray-100"
@@ -63,13 +63,13 @@
     </div>
 
     <!-- Main Content Area (Overlaid on Map) -->
-    <main class="content-overlay">
+    <main class="content-overlay ">
       <slot />
     </main>
 
     <!-- Mobile Navigation -->
     <nav class="mobile-nav z-20">
-      <div class="flex items-center justify-around py-2 px-4">
+      <div class="flex items-center justify-around py-0 px-4">
         <NuxtLink
           to="/"
           class="flex flex-col items-center p-2 rounded-lg transition-colors"
@@ -87,7 +87,7 @@
           <Icon name="heroicons:play-circle" class="w-6 h-6" />
           <span class="text-xs mt-1">Track</span>
         </NuxtLink>
-        
+
         <NuxtLink
           to="/rides"
           class="flex flex-col items-center p-2 rounded-lg transition-colors"
@@ -95,6 +95,15 @@
         >
           <Icon name="heroicons:map" class="w-6 h-6" />
           <span class="text-xs mt-1">Rides</span>
+        </NuxtLink>
+        
+        <NuxtLink
+          to="/chat"
+          class="flex flex-col items-center p-2 rounded-lg transition-colors"
+          :class="{ 'text-primary-600 bg-primary-50': $route.path === '/chat' }"
+        >
+          <Icon name="heroicons:chat-bubble-left-right" class="w-6 h-6" />
+          <span class="text-xs mt-1">Chat</span>
         </NuxtLink>
         
         <NuxtLink

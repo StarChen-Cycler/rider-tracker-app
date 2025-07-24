@@ -840,7 +840,7 @@ onUnmounted(() => {
 
 .ride-controls {
   position: fixed;
-  bottom: 72px; /* Height of mobile nav + some padding */
+  bottom: 55px; /* Height of mobile nav + some padding */
   left: 0;
   right: 0;
   background-color: rgba(255, 255, 255, 0.9);

@@ -9,7 +9,10 @@
     "build:prod": "cross-env NODE_OPTIONS=--no-deprecation nuxt build",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
-    "postinstall": "nuxt prepare"
+    "postinstall": "nuxt prepare",
+    "setup:windows": "node scripts/setup-windows.js",
+    "setup:macos": "bash scripts/setup-macos.sh",
+    "setup:linux": "bash scripts/setup-linux.sh"
   },
   "dependencies": {
     "@headlessui/vue": "^1.7.23",

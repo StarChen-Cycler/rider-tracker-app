@@ -35,6 +35,24 @@ A mobile-first web application for tracking cycling and motorbike rides with GPS
 ```bash
 git clone <repository-url>
 cd rider-tracker-app
+```
+
+#### Option 1: Automatic Setup (Recommended)
+Use our platform-specific setup scripts:
+
+```bash
+# Windows
+pnpm run setup:windows
+
+# macOS
+pnpm run setup:macos
+
+# Linux
+pnpm run setup:linux
+```
+
+#### Option 2: Manual Setup
+```bash
 pnpm install
 ```
 
@@ -206,6 +224,16 @@ export default defineNuxtConfig({
 Now your application will be accessible over HTTPS, allowing geolocation to work properly in all modern browsers.
 
 For more information, check out the [Nuxt.js documentation](https://nuxt.com/docs/getting-started/deployment).
+
+## FRP Setup for Remote Access
+
+For easier mobile testing and development, you can use FRP (Fast Reverse Proxy) to expose your local development server to the internet. This is especially useful for testing geolocation features that require HTTPS.
+
+See our detailed [FRP Setup Guide](docs/frp-guide.md) for complete instructions on:
+- Setting up an FRP server on a public VPS
+- Configuring the FRP client on your development machine
+- Exposing your local Nuxt development server to the internet
+- Setting up HTTPS with Let's Encrypt certificates
 
 ## Database Schema
 
