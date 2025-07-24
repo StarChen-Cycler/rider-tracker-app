@@ -211,6 +211,11 @@ import { ref, computed, onMounted } from 'vue'
 import { formatDate, formatDistance } from '~/utils/formatters'
 import { APP_CONFIG } from '~/utils/constants'
 
+// Page meta with auth middleware
+definePageMeta({
+  middleware: 'auth'
+})
+
 // Meta
 useHead({
   title: 'Profile - Rider Tracker'
@@ -277,9 +282,14 @@ const signIn = () => {
   // Navigate to sign in page or show modal
 }
 
-const signOut = () => {
-  console.log('Sign out')
-  // Sign out user and clear data
+const signOut = async () => {
+  try {
+    const { signOut: authSignOut } = useAuth()
+    await authSignOut()
+    await navigateTo('/login')
+  } catch (error) {
+    console.error('Sign out error:', error)
+  }
 }
 
 const loadProfile = async () => {

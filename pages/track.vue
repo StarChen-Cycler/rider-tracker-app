@@ -250,6 +250,11 @@ import { useGlobalMap } from '~/composables/useGlobalMap'
 import { useMapSettings } from '~/composables/useMapSettings'
 import AppButton from '~/components/ui/AppButton.vue'
 
+// Page meta with auth middleware
+definePageMeta({
+  middleware: 'auth'
+})
+
 // Meta
 useHead({
   title: 'Track Ride - Rider Tracker'

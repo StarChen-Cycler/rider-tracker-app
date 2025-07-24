@@ -9,19 +9,70 @@
       </p>
       
       <div class="space-y-4">
-        <NuxtLink 
-          to="/track" 
-          class="btn-primary block w-full py-3 px-4 rounded-lg text-center font-medium"
-        >
-          Start Tracking
-        </NuxtLink>
+        <!-- Authenticated user actions -->
+        <template v-if="user">
+          <NuxtLink 
+            to="/track" 
+            class="btn-primary block w-full py-3 px-4 rounded-lg text-center font-medium"
+          >
+            Start Tracking
+          </NuxtLink>
+          
+          <NuxtLink 
+            to="/rides" 
+            class="btn-secondary block w-full py-3 px-4 rounded-lg text-center font-medium"
+          >
+            View My Rides
+          </NuxtLink>
+        </template>
         
-        <NuxtLink 
-          to="/rides" 
-          class="btn-secondary block w-full py-3 px-4 rounded-lg text-center font-medium"
-        >
-          View My Rides
-        </NuxtLink>
+        <!-- Non-authenticated user actions -->
+        <template v-else>
+          <NuxtLink 
+            to="/login" 
+            class="btn-primary block w-full py-3 px-4 rounded-lg text-center font-medium"
+          >
+            Sign In to Start Tracking
+          </NuxtLink>
+          
+          <p class="text-sm text-gray-600 text-center">
+            Create an account or sign in to save your rides and track your progress
+          </p>
+
+                    <!-- Development Tools Navigation (Dev Mode Only) -->
+          <div v-if="isDev" class="mt-6 space-y-3">
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center">
+                <div class="w-full border-t border-gray-200"></div>
+              </div>
+              <div class="relative flex justify-center text-sm">
+                <span class="px-4 bg-white text-yellow-600 font-medium">开发工具</span>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <NuxtLink 
+                to="/dev-utils" 
+                class="btn-secondary py-3 px-4 rounded-lg text-center font-medium flex items-center justify-center gap-2"
+              >
+                <Icon name="heroicons:wrench-screwdriver" class="w-5 h-5 text-gray-600" />
+                <span>开发工具集</span>
+              </NuxtLink>
+              
+              <NuxtLink 
+                to="/debug-auth" 
+                class="btn-secondary py-3 px-4 rounded-lg text-center font-medium flex items-center justify-center gap-2"
+              >
+                <Icon name="heroicons:bug-ant" class="w-5 h-5 text-gray-600" />
+                <span>认证调试</span>
+              </NuxtLink>
+            </div>
+
+            <p class="text-xs text-yellow-600 text-center">
+              仅在开发模式下可用的调试工具
+            </p>
+          </div>
+        </template>
       </div>
       
       <!-- Map info section -->
@@ -44,6 +95,17 @@
           </span>
         </div>
       </div>
+
+      <!-- Development Mode Info -->
+      <div v-if="isDev" class="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+        <div class="flex items-center mb-2">
+          <Icon name="heroicons:wrench-screwdriver" class="w-5 h-5 text-yellow-600 mr-2" />
+          <h3 class="text-sm font-semibold text-yellow-800">开发模式</h3>
+        </div>
+        <p class="text-xs text-yellow-700">
+          身份验证已跳过，可直接访问所有页面进行开发测试
+        </p>
+      </div>
     </div>
   </div>
 </template>
@@ -51,9 +113,16 @@
 <script setup>
 import { computed, watch } from 'vue'
 import { useGlobalMap } from '~/composables/useGlobalMap'
+import { useAuth } from '~/composables/useSupabase'
 
 // Get the global map state
 const { currentLocation, locationError } = useGlobalMap()
+
+// Get auth state
+const { user } = useAuth()
+
+// Check if in development mode
+const isDev = import.meta.dev
 
 // Debug log to verify reactive state
 watch(currentLocation, (newLocation) => {

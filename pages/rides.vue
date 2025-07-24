@@ -158,6 +158,11 @@ import { useGlobalMap } from '~/composables/useGlobalMap'
 import LoadingSpinner from '~/components/ui/LoadingSpinner.vue'
 import AppButton from '~/components/ui/AppButton.vue'
 
+// Page meta with auth middleware
+definePageMeta({
+  middleware: 'auth'
+})
+
 // Meta
 useHead({
   title: 'My Rides - Rider Tracker'
