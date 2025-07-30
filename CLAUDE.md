@@ -25,7 +25,8 @@ rider-tracker-app/
 │   ├── useLocationTracking.ts  # GPS tracking logic
 │   ├── useOrientTracking.ts    # Device orientation for compass
 │   ├── useGlobalMap.ts  # Global map state management
-│   └── useMapSettings.ts # Map themes and configuration
+│   ├── useMapSettings.ts # Map themes and configuration
+│   └── useRideRecording.ts # Ride data management and persistence
 ├── pages/               # File-based routing
 ├── database/            # Supabase schema and migrations
 ├── types/               # TypeScript type definitions
@@ -74,6 +75,7 @@ dev:clean                  # Clean build with Node.js deprecation warnings suppr
 - **useGlobalMap**: Global map state management across components
 - **useSupabase**: Supabase client with auth and database operations
 - **useAmap**: Amap map initialization and API integration
+- **useRideRecording**: Ride data management with local and remote persistence
 
 ### Mobile UX Patterns
 - Touch targets: Minimum 44px for accessibility
