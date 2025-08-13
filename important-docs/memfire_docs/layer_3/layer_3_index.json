@@ -1,0 +1,10 @@
+{
+  "layer": 3,
+  "page_count": 1,
+  "pages": [
+    "https://docs.memfiredb.com/docs/app/development_guide/database/full-text-search/"
+  ],
+  "sample_urls": [
+    "https://docs.memfiredb.com/docs/app/development_guide/database/full-text-search/"
+  ]
+}

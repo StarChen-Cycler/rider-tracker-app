@@ -98,9 +98,9 @@
         </NuxtLink>
         
         <NuxtLink
-          to="/chat"
+          to="/chats"
           class="flex flex-col items-center p-2 rounded-lg transition-colors"
-          :class="{ 'text-primary-600 bg-primary-50': $route.path === '/chat' }"
+          :class="{ 'text-primary-600 bg-primary-50': $route.path === '/chats' }"
         >
           <Icon name="heroicons:chat-bubble-left-right" class="w-6 h-6" />
           <span class="text-xs mt-1">Chat</span>

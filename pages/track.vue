@@ -130,7 +130,7 @@
               Recording recovered from page refresh
             </p>
             <p class="text-sm text-blue-600">
-              {{ recoveredRideInfo.title }} • {{ formatDuration(recoveredRideInfo.duration) }} • {{ recoveredRideInfo.points }} points
+              {{ recoveredRideInfo.title }} • {{ formatTime(recoveredRideInfo.duration) }} • {{ recoveredRideInfo.points }} points
             </p>
           </div>
           <div class="ml-auto">
@@ -162,7 +162,7 @@
           </span>
         </div>
         <div class="text-sm text-gray-500">
-          {{ formatDuration(recordingDuration) }}
+          {{ formatTime(recordingDuration) }}
         </div>
       </div>
 
@@ -170,19 +170,19 @@
       <div class="grid grid-cols-3 gap-4 mb-6">
         <div class="text-center">
           <div class="text-lg font-semibold text-gray-900">
-            {{ formatDistance(totalDistance) }}
+            {{ formatDistance(totalDistance || 0) }}
           </div>
           <div class="text-xs text-gray-500">Distance</div>
         </div>
         <div class="text-center">
           <div class="text-lg font-semibold text-gray-900">
-            {{ formatSpeed(rideSpeed || currentSpeed) }}
+            {{ formatSpeed(currentSpeed) }}
           </div>
           <div class="text-xs text-gray-500">Speed</div>
         </div>
         <div class="text-center">
           <div class="text-lg font-semibold text-gray-900">
-            {{ rideLocationPoints.length }}
+            {{ rideLocationPoints?.length || 0 }}
           </div>
           <div class="text-xs text-gray-500">Points</div>
         </div>
@@ -241,13 +241,16 @@
 </template>
 
 <script setup>
-import { ref, onUnmounted, watch, computed } from 'vue'
-import { useRouteTracking } from '~/composables/useAmap'
-import { useRideRecording } from '~/composables/useRideRecording'
-import { useMapPolylines } from '~/composables/useMapPolylines'
-import { formatDistance, formatSpeed } from '~/utils/formatters'
+import { ref, onUnmounted } from 'vue'
 import { useGlobalMap } from '~/composables/useGlobalMap'
 import { useMapSettings } from '~/composables/useMapSettings'
+import { useTrackRideControls } from '~/composables/useTrackRideControls'
+import { useTrackTimer } from '~/composables/useTrackTimer'
+import { useTrackUIState } from '~/composables/useTrackUIState'
+import { useTrackLocationStatus } from '~/composables/useTrackLocationStatus'
+import { useTrackRecovery } from '~/composables/useTrackRecovery'
+import { useTrackCleanup } from '~/composables/useTrackCleanup'
+import { useFormatters } from '~/composables/useFormatters'
 import AppButton from '~/components/ui/AppButton.vue'
 
 // Page meta with auth middleware
@@ -262,14 +265,10 @@ useHead({
 
 // Reactive data
 const showSettings = ref(false)
-const starting = ref(false)
-const stopping = ref(false)
-const selectedVehicle = ref('bicycle')
 const currentSpeed = ref(0)
-const currentHeading = ref(0) // Add heading tracking
-const recoveredRideInfo = ref(null) // Store info about recovered recording
-const recoveredRideInfoTimer = ref(null) // Timer for auto-hiding recovered ride info
-// Get the global map state
+const currentHeading = ref(0)
+
+// Composables usage - zero business logic
 const { 
   currentLocation, 
   locationError, 
@@ -280,349 +279,43 @@ const {
   toggleLocationTracking
 } = useGlobalMap()
 
-// Get map settings state
 const {
   currentTheme,
   enabledFeatures,
-  setMapTheme,
-  setMapFeatures,
   toggleFeature,
   getAvailableThemes,
   getAvailableFeatures
 } = useMapSettings()
 
-// Map settings reactive data
-const selectedTheme = ref(currentTheme.value)
-const availableThemes = ref(getAvailableThemes())
-const availableFeatures = ref(getAvailableFeatures())
-
-// Map settings methods (now async)
-const onThemeChange = async () => {
-  try {
-    await setMapTheme(selectedTheme.value)
-  } catch (error) {
-    console.error('Failed to change map theme:', error)
-  }
-}
-
-const toggleMapFeature = async (featureKey) => {
-  try {
-    await toggleFeature(featureKey)
-  } catch (error) {
-    console.error('Failed to toggle map feature:', error)
-  }
-}
-
-const isFeatureEnabled = (featureKey) => {
-  return enabledFeatures.value.includes(featureKey)
-}
-
-// Watch for theme changes to update selected theme
-watch(currentTheme, (newTheme) => {
-  selectedTheme.value = newTheme
-})
-
-// Watch for UI setting changes and save to temp state for persistence
-watch(selectedVehicle, (newVehicle) => {
-  saveTempUISettings({ selectedVehicle: newVehicle })
-})
-
-watch(selectedTheme, (newTheme) => {
-  saveTempUISettings({ selectedTheme: newTheme })
-})
-
-watch(enabledFeatures, (newFeatures) => {
-  saveTempUISettings({ enabledFeatures: [...newFeatures] })
-}, { deep: true })
-
-// Ride recording composable
 const {
-  isRecording: isRideRecording,
-  isPaused: isRidePaused,
-  currentRide,
-  locationPoints: rideLocationPoints,
-  recordingDuration,
-  totalDistance: rideDistance,
-  currentSpeed: rideSpeed,
-  // maxSpeed: rideMaxSpeed,  // Available but not used in this component yet
-  // saveStatus,              // Available but not used in this component yet
-  // saveError,               // Available but not used in this component yet
-  startRide: startRideRecording,
-  addLocationPoint,
-  pauseRide: pauseRideRecording,
-  resumeRide: resumeRideRecording,
-  stopRide: stopRideRecording,
-  updateRecordingDuration,
-  cleanup: cleanupRideRecording,
-  // Persistence methods
-  initializeRecordingState,
-  formatDuration,
-  // UI Settings persistence
-  saveTempUISettings,
-  getTempUISettings
-} = useRideRecording()
+  isRecording,
+  isPaused,
+  starting,
+  stopping,
+  startRide,
+  pauseRide,
+  resumeRide,
+  stopRide
+} = useTrackRideControls()
 
-// Map polylines composable for track visualization
-const {
-  activePolyline,
-  startRideTracking,
-  addTrackingPoint,
-  pauseRideTracking,
-  resumeRideTracking,
-  completeRideTracking,
-  cancelRideTracking,
-  clearAllPolylines,
-  recoverRidePolyline
-} = useMapPolylines()
+const { locationPoints: rideLocationPoints } = useRideRecorder()
 
-// Computed property for location state message and styling
-const locationState = computed(() => {
-  // Check if we have location data
-  if (currentLocation.value) {
-    return {
-      textColor: 'text-green-600',
-      message: `${currentLocation.value.lat.toFixed(6)}, ${currentLocation.value.lng.toFixed(6)}`
-    }
-  } 
-  
-  // If we have an error
-  if (locationError.value) {
-    return {
-      textColor: 'text-red-600',
-      message: 'Location error: Please enable location services'
-    }
-  }
-  
-  // Default waiting state
-  return {
-    textColor: 'text-yellow-600',
-    message: 'Getting location...'
-  }
-})
+const { recordingDuration } = useTrackTimer()
+const { selectedVehicle, selectedTheme, availableThemes, availableFeatures, onThemeChange, toggleMapFeature, isFeatureEnabled, initializeUIState } = useTrackUIState()
+const { locationState } = useTrackLocationStatus()
+const { recoveredRideInfo, setRecoveredRideInfo, dismissRecoveredRideInfo, initializeTrackRecovery } = useTrackRecovery()
+const { cleanup } = useTrackCleanup()
+const { formatDistance, formatSpeed, formatDuration: formatTime } = useFormatters()
 
-// Keep route tracking for map display (but use ride recording for data)
-const {
-  startRecording,
-  stopRecording
-} = useRouteTracking()
+// Computed values
+const { totalDistance } = useRideRecorder()
 
-// Timer for elapsed time
-let timer = null
-
-// Computed values using ride recording data
+// Get ride status
 const getRideStatus = () => {
-  if (isRideRecording.value && !isRidePaused.value) return 'Recording'
-  if (isRidePaused.value) return 'Paused'
+  if (isRecording.value && !isPaused.value) return 'Recording'
+  if (isPaused.value) return 'Paused'
   return 'Ready to start'
 }
-
-// Use ride recording values for display
-const isRecording = computed(() => isRideRecording.value)
-const isPaused = computed(() => isRidePaused.value)
-const totalDistance = computed(() => rideDistance.value)
-
-// Methods using ride recording
-const startRide = async () => {
-  starting.value = true
-  console.log('🚴 TRACK DEBUG: Starting ride...')
-  
-  try {
-    // Clear any existing polylines before starting new ride
-    clearAllPolylines()
-    console.log('🧹 TRACK DEBUG: Cleared existing polylines before new ride')
-    
-    // Start ride recording with metadata
-    const rideTitle = `${selectedVehicle.value} ride - ${new Date().toLocaleDateString()}`
-    console.log('🚴 TRACK DEBUG: Starting ride recording with title:', rideTitle)
-    
-    const rideId = await startRideRecording(rideTitle, selectedVehicle.value)
-    console.log('🚴 TRACK DEBUG: Ride recording started with ID:', rideId)
-    
-    // Start polyline tracking for visual path
-    const polyline = startRideTracking(rideId)
-    console.log('🚴 TRACK DEBUG: Polyline tracking started:', polyline?.id)
-    
-    // Also start route tracking for map display
-    await startRecording()
-    console.log('🚴 TRACK DEBUG: Route tracking started')
-    
-    // Start timer
-    startTimer()
-    
-    // Check initial state
-    console.log('🚴 TRACK DEBUG: Initial ride state after start:', {
-      isRideRecording: isRideRecording.value,
-      isRidePaused: isRidePaused.value,
-      currentRide: currentRide.value?.metadata.id,
-      locationPointsCount: rideLocationPoints.value.length,
-      currentLocation: currentLocation.value ? 'available' : 'not available'
-    })
-    
-    console.log('🚴 Started ride recording:', rideTitle)
-  } catch (error) {
-    console.error('Failed to start ride:', error)
-    alert('Failed to start ride. Please check your location permissions.')
-  } finally {
-    starting.value = false
-  }
-}
-
-const pauseRide = () => {
-  // Pause ride recording
-  pauseRideRecording()
-  
-  // Pause polyline tracking (changes style to dashed)
-  pauseRideTracking()
-  
-  stopTimer()
-  console.log('⏸️ Paused ride recording and polyline tracking')
-}
-
-const resumeRide = () => {
-  // Resume ride recording
-  resumeRideRecording()
-  
-  // Resume polyline tracking (changes style back to solid)
-  resumeRideTracking()
-  
-  // Restart timer accounting for existing duration
-  startTimer()
-  console.log('▶️ Resumed ride recording and polyline tracking')
-}
-
-const stopRide = async () => {
-  stopping.value = true
-  try {
-    // Stop ride recording and save data
-    const result = await stopRideRecording()
-    
-    // Complete polyline tracking (changes style to green)
-    completeRideTracking()
-    console.log('🏁 TRACK DEBUG: Completed polyline tracking')
-    
-    // Also stop route tracking
-    await stopRecording()
-    
-    // Stop timer
-    stopTimer()
-    
-    // Show completion message
-    if (result.success && result.finalStats) {
-      console.log('🏁 TRACK DEBUG: Using final stats from result:', {
-        finalStats: result.finalStats,
-        storeValues: {
-          rideDistance: rideDistance.value,
-          recordingDuration: recordingDuration.value,
-          rideLocationPoints: rideLocationPoints.value.length
-        },
-        result: result
-      })
-      
-      const distance = formatDistance(result.finalStats.totalDistance)
-      const duration = formatDuration(result.finalStats.totalDuration)
-      const points = result.finalStats.totalPoints
-      const avgSpeed = formatSpeed(result.finalStats.averageSpeed)
-      const maxSpeed = formatSpeed(result.finalStats.maxSpeed)
-      
-      console.log('🏁 TRACK DEBUG: Formatted values for alert:', {
-        distance,
-        duration,
-        points,
-        avgSpeed,
-        maxSpeed
-      })
-      
-      alert(`🎉 Ride completed!\nDistance: ${distance}\nDuration: ${duration}\nPoints: ${points}\nAvg Speed: ${avgSpeed}\nMax Speed: ${maxSpeed}\nRide ID: ${result.rideId}\n\nData saved locally and to backend!`)
-    } else if (result.success) {
-      // Fallback if finalStats not available
-      alert(`🎉 Ride completed!\nRide ID: ${result.rideId}\n\nData saved locally and to backend!`)
-    } else {
-      alert(`⚠️ Ride stopped but save failed: ${result.error || 'Unknown error'}`)
-    }
-  } catch (error) {
-    console.error('Failed to stop ride:', error)
-    alert('Failed to stop ride: ' + (error instanceof Error ? error.message : 'Unknown error'))
-  } finally {
-    stopping.value = false
-  }
-}
-
-let startTimestamp = null
-
-const startTimer = () => {
-  if (timer) clearInterval(timer)
-  console.log('⏰ TRACK DEBUG: Starting timer')
-  
-  // Account for existing duration (important for resume and recovery)
-  const existingDuration = recordingDuration.value
-  startTimestamp = Date.now() - (existingDuration * 1000)
-  
-  timer = setInterval(() => {
-    const elapsed = Math.floor((Date.now() - startTimestamp) / 1000)
-    // Update ride recording duration
-    updateRecordingDuration(elapsed)
-    console.log('⏰ TRACK DEBUG: Timer tick:', {
-      elapsed: elapsed,
-      recordingDuration: recordingDuration.value,
-      rideDistance: rideDistance.value,
-      locationPoints: rideLocationPoints.value.length
-    })
-  }, 1000)
-}
-
-const stopTimer = () => {
-  if (timer) {
-    clearInterval(timer)
-    timer = null
-  }
-}
-
-// Update current location and add to ride recording
-watch(() => currentLocation.value, (newLocation) => {
-  console.log('🔍 TRACK DEBUG: Location changed:', {
-    hasLocation: !!newLocation,
-    location: newLocation ? {
-      lat: newLocation.lat?.toFixed(6),
-      lng: newLocation.lng?.toFixed(6),
-      speed: newLocation.speed,
-      accuracy: newLocation.accuracy,
-      timestamp: newLocation.timestamp
-    } : null,
-    rideState: {
-      isRideRecording: isRideRecording.value,
-      isRidePaused: isRidePaused.value,
-      shouldAddPoint: isRideRecording.value && !isRidePaused.value
-    }
-  })
-  
-  if (newLocation) {
-    // Update current speed if available
-    if (newLocation.speed !== undefined) {
-      currentSpeed.value = newLocation.speed
-    }
-    
-    // Update heading if available
-    if (newLocation.heading !== undefined) {
-      currentHeading.value = newLocation.heading
-    }
-    
-    // Add location point to ride recording if recording is active
-    if (isRideRecording.value && !isRidePaused.value) {
-      console.log('📍 TRACK DEBUG: Adding location point to ride recording')
-      addLocationPoint(newLocation)
-      
-      // Also add point to polyline for visual tracking
-      addTrackingPoint(newLocation.lat, newLocation.lng)
-      console.log('📍 TRACK DEBUG: Added point to polyline tracking')
-    } else {
-      console.log('⚠️ TRACK DEBUG: NOT adding location point because:', {
-        isRideRecording: isRideRecording.value,
-        isRidePaused: isRidePaused.value,
-        reason: !isRideRecording.value ? 'not recording' : 'ride is paused'
-      })
-    }
-  }
-}, { deep: true })
 
 // Toggle device orientation tracking
 const toggleOrientationTracking = async () => {
@@ -631,7 +324,6 @@ const toggleOrientationTracking = async () => {
       stopOrientationTracking()
     } else {
       const success = await startOrientationTracking()
-      
       if (!success) {
         alert('Could not start orientation tracking. Make sure your device supports it and you have granted permission.')
       }
@@ -642,178 +334,15 @@ const toggleOrientationTracking = async () => {
   }
 }
 
-// Clear all polylines (useful for debugging or reset)
-const clearAllTracks = () => {
-  clearAllPolylines()
-  console.log('🧹 TRACK DEBUG: Cleared all polyline tracks')
-}
-
-// Set recovered ride info with auto-hide timer
-const setRecoveredRideInfo = (info) => {
-  // Clear any existing timer
-  if (recoveredRideInfoTimer.value) {
-    clearTimeout(recoveredRideInfoTimer.value)
-  }
-  
-  // Set the info
-  recoveredRideInfo.value = info
-  
-  // Set auto-hide timer for 2 seconds
-  recoveredRideInfoTimer.value = setTimeout(() => {
-    recoveredRideInfo.value = null
-    recoveredRideInfoTimer.value = null
-    console.log('🔄 TRACK DEBUG: Auto-hid recovered ride info after 2 seconds')
-  }, 2000)
-  
-  console.log('🔄 TRACK DEBUG: Set recovered ride info with 2-second auto-hide timer')
-}
-
-// Manually dismiss recovered ride info (for X button)
-const dismissRecoveredRideInfo = () => {
-  // Clear any existing timer
-  if (recoveredRideInfoTimer.value) {
-    clearTimeout(recoveredRideInfoTimer.value)
-    recoveredRideInfoTimer.value = null
-  }
-  
-  // Clear the info
-  recoveredRideInfo.value = null
-  console.log('🔄 TRACK DEBUG: Manually dismissed recovered ride info')
-}
-
-// State recovery on component mount
-const initializeComponent = async () => {
-  console.log('🔄 TRACK DEBUG: Initializing component and checking for temp recording state')
-  
-  // Restore UI settings from temp state first
-  const tempUISettings = getTempUISettings()
-  if (tempUISettings.selectedVehicle) {
-    selectedVehicle.value = tempUISettings.selectedVehicle
-    console.log('🔄 TRACK DEBUG: Restored vehicle type:', tempUISettings.selectedVehicle)
-  }
-  if (tempUISettings.selectedTheme) {
-    selectedTheme.value = tempUISettings.selectedTheme
-    try {
-      await setMapTheme(tempUISettings.selectedTheme)
-      console.log('🔄 TRACK DEBUG: Restored map theme:', tempUISettings.selectedTheme)
-    } catch (error) {
-      console.warn('⚠️ Failed to restore map theme:', error)
-    }
-  }
-  if (tempUISettings.enabledFeatures && tempUISettings.enabledFeatures.length > 0) {
-    try {
-      await setMapFeatures(tempUISettings.enabledFeatures)
-      console.log('🔄 TRACK DEBUG: Restored map features:', tempUISettings.enabledFeatures)
-    } catch (error) {
-      console.warn('⚠️ Failed to restore map features:', error)
-    }
-  }
-  
-  // Check for existing recording state
-  const recoveryResult = initializeRecordingState()
-  
-  if (recoveryResult.recovered) {
-    console.log('🔄 TRACK DEBUG: Recording state recovered:', recoveryResult)
-    
-    // Restart timer if recording was active
-    if (isRideRecording.value && !isRidePaused.value) {
-      console.log('🔄 TRACK DEBUG: Resuming timer for recovered recording')
-      startTimer()
-    }
-    
-    // Redraw polylines from recovered location points using optimized bulk method
-    if (rideLocationPoints.value.length > 0 && currentRide.value) {
-      console.log('🔄 TRACK DEBUG: Recovering polylines from', rideLocationPoints.value.length, 'recovered points')
-      
-             // Determine polyline status based on ride state
-       let polylineStatus
-       if (isRideRecording.value && !isRidePaused.value) {
-         polylineStatus = 'recording'
-       } else if (isRidePaused.value) {
-         polylineStatus = 'paused'
-       } else {
-         polylineStatus = 'completed'
-       }
-      
-             // Use optimized bulk polyline recovery (waits for map to be ready)
-       recoverRidePolyline({
-         id: currentRide.value.metadata.id,
-         locationPoints: rideLocationPoints.value,
-         status: polylineStatus
-       }).then((recoveredPolyline) => {
-         if (recoveredPolyline) {
-           console.log('🔄 TRACK DEBUG: Successfully recovered polyline:', {
-             polylineId: recoveredPolyline.id,
-             rideId: recoveredPolyline.rideId,
-             pointCount: recoveredPolyline.points.length,
-             status: recoveredPolyline.status,
-             isActive: recoveredPolyline.status === 'recording' || recoveredPolyline.status === 'paused'
-           })
-           
-           // Update recovery info to show polyline was also recovered
-           if (recoveredRideInfo.value) {
-             recoveredRideInfo.value.polylineRecovered = true
-           }
-         } else {
-           console.warn('⚠️ TRACK DEBUG: Failed to recover polyline - continuing without visual track')
-         }
-       }).catch((error) => {
-         console.error('❌ TRACK DEBUG: Error recovering polyline:', error, '- continuing without visual track')
-       })
-    }
-    
-    // Set recovery info for UI indicator with auto-hide timer
-    setRecoveredRideInfo({
-      title: recoveryResult.title,
-      duration: recoveryResult.duration,
-      points: recoveryResult.points
-    })
-  }
-}
-
-// Call initialization on component mount
-initializeComponent()
-
-// Make debug function available globally
-if (typeof window !== 'undefined') {
-  window.clearAllTracks = clearAllTracks
-}
+// Initialize component
+onMounted(async () => {
+  await initializeUIState()
+  await initializeTrackRecovery()
+})
 
 // Cleanup on unmount
 onUnmounted(() => {
-  // Stop timer
-  stopTimer()
-  
-  // Clear recovered ride info timer
-  if (recoveredRideInfoTimer.value) {
-    clearTimeout(recoveredRideInfoTimer.value)
-    recoveredRideInfoTimer.value = null
-  }
-  
-  // Clean up ride recording first (important for data safety)
-  cleanupRideRecording()
-  
-  // Clean up polyline tracking
-  if (activePolyline.value) {
-    // Cancel active tracking if component unmounts during recording
-    cancelRideTracking()
-    console.log('🧹 TRACK DEBUG: Cancelled active polyline tracking on unmount')
-  }
-  
-  // Clean up any ongoing recording
-  if (isRecording.value) {
-    stopRecording()
-  }
-  
-  // Stop orientation tracking
-  if (isOrientationTracking.value) {
-    stopOrientationTracking()
-  }
-  
-  // Stop location tracking
-  if (isLocationTracking.value) {
-    toggleLocationTracking()
-  }
+  cleanup()
 })
 </script>
 

@@ -15,7 +15,7 @@ export default defineNuxtRouteMiddleware(async (to) => {
   })
 
   // Ensure auth is initialized
-  if (!loading.value && !user.value) {
+  if (!user.value) {
     await initializeAuth()
   }
 
